@@ -108,7 +108,7 @@ if (require.main === module) {
       if (options.dryRun) {
         console.log('DRY RUN: The following transactions would be uploaded:');
         transactions.forEach((transaction, index) => {
-          console.log(`${index + 1}. ${transaction.description || 'Unknown'} - ${transaction.amount || '0'}`);
+          console.log(`${index + 1}. Expense: ${transaction.description || 'Unknown'} - Total Amount: ${Math.abs(parseFloat(transaction.amount || 0))}`);
         });
       } else {
         await uploadToNotion(notion, notionDatabaseId, transactions);
@@ -185,28 +185,37 @@ if (require.main === module) {
             database_id: databaseId,
           },
           properties: {
-            // These are example mappings - adjust according to your actual Notion database structure
-            'Name': {
+            // Transaction Date -> Date
+            'Date': {
+              date: {
+                start: transaction.date || new Date().toISOString().split('T')[0],
+              },
+            },
+            // Description -> Expense
+            'Expense': {
               title: [
                 {
                   text: {
-                    content: transaction.description || 'Unknown Transaction'
-                  }
-                }
-              ]
+                    content: transaction.description || 'Unknown Transaction',
+                  },
+                },
+              ],
             },
-            'Amount': {
-              number: parseFloat(transaction.amount || 0)
+            // Amount -> Total Amount (always positive)
+            'Total Amount': {
+              number: Math.abs(parseFloat(transaction.amount || 0)), // Ensure positive value
             },
-            'Date': {
-              date: {
-                start: transaction.date || new Date().toISOString().split('T')[0]
-              }
+            // Status field set to "Processing Expense" for all imported records
+            'Status': {
+              select: {
+                name: 'Processing Audit',
+              },
             },
+            // Payment Method field - derived from card name
             'Payment Method': {
               select: {
-                name: transaction.paymentMethod
-              }
+                name: transaction.paymentMethod || 'Unknown Card',
+              },
             },
             // Add category if available
             ...(transaction.category && {
@@ -215,12 +224,11 @@ if (require.main === module) {
                   name: transaction.category
                 }
               }
-            }),
-            // End of properties
+            })
           }
         });
         
-        console.log(`Uploaded transaction: ${transaction.description || 'Unknown'}`);
+        console.log(`Uploaded transaction: ${transaction.description || 'Unknown'} - ${Math.abs(parseFloat(transaction.amount || 0))}`);
       } catch (error) {
         console.error(`Failed to upload transaction: ${error.message}`);
         // Continue with the next transaction
