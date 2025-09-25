@@ -106,13 +106,16 @@ if (require.main === module) {
       
       // Upload transactions to Notion (unless dry run)
       if (options.dryRun) {
-        console.log('DRY RUN: The following transactions would be uploaded:');
+        console.log('🔍 DRY RUN: The following transactions would be uploaded:');
+        console.log('------------------------------------------------');
         transactions.forEach((transaction, index) => {
-          console.log(`${index + 1}. Expense: ${transaction.description || 'Unknown'} - Total Amount: ${Math.abs(parseFloat(transaction.amount || 0))}`);
+          console.log(`${index + 1}. 📝 ${transaction.description || 'Unknown'} | 💰 $${Math.abs(parseFloat(transaction.amount || 0)).toFixed(2)} | 📅 ${transaction.date || 'No date'}`);
         });
+        console.log('------------------------------------------------');
+        console.log(`📊 Total: ${transactions.length} transactions`);
       } else {
         await uploadToNotion(notion, notionDatabaseId, transactions);
-        console.log('Successfully uploaded transactions to Notion!');
+        console.log(`\n🎉 Successfully uploaded ${transactions.length} transactions to Notion! 🎉`);
       }
     } catch (error) {
       console.error('Error:', error.message);
@@ -228,7 +231,8 @@ if (require.main === module) {
           }
         });
         
-        console.log(`Uploaded transaction: ${transaction.description || 'Unknown'} - ${Math.abs(parseFloat(transaction.amount || 0))}`);
+        // Print transaction details in a visually pleasing way with emojis
+        console.log(`✅ Uploaded: 💰 ${Math.abs(parseFloat(transaction.amount || 0)).toFixed(2)} | 📝 ${transaction.description || 'Unknown'} | 📅 ${transaction.date || 'No date'} | 💳 ${transaction.paymentMethod}`);
       } catch (error) {
         console.error(`Failed to upload transaction: ${error.message}`);
         // Continue with the next transaction
