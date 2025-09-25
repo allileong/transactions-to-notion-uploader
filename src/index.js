@@ -15,6 +15,34 @@ dotenv.config();
 const ALLOWED_PAYMENT_METHODS = ['Amex Platinum', 'Apple Card', 'Chase Freedom', 'Chase Sapphire', 'Chase Southwest'];
 const ALLOWED_USERS = ['Alli', 'Justin'];
 
+// Bank-specific CSV field mappings
+const BANK_MAPPINGS = {
+  chase: {
+    transactionDate: 'Transaction Date',
+    postDate: 'Post Date',
+    description: 'Description',
+    category: 'Category',
+    type: 'Type',
+    amount: 'Amount',
+    memo: 'Memo'
+  },
+  amex: {
+    // Amex-specific field mappings
+    transactionDate: 'Date',
+    description: 'Description',
+    amount: 'Amount',
+    // Add other Amex fields as needed
+  },
+  apple: {
+    // Apple Card-specific field mappings
+    transactionDate: 'Transaction Date',
+    description: 'Merchant',
+    amount: 'Amount (USD)',
+    category: 'Category',
+    // Add other Apple Card fields as needed
+  }
+};
+
 
 // Only run the main code if this file is being run directly
 if (require.main === module) {
@@ -83,7 +111,7 @@ if (require.main === module) {
       if (options.dryRun) {
         console.log('DRY RUN: The following transactions would be uploaded:');
         transactions.forEach((transaction, index) => {
-          console.log(`${index + 1}. ${transaction['Description'] || transaction['description'] || 'Unknown'} - ${transaction['Amount'] || transaction['amount'] || '0'}`);
+          console.log(`${index + 1}. ${transaction.description || 'Unknown'} - ${transaction.amount || '0'}`);
         });
       } else {
         await uploadToNotion(notion, notionDatabaseId, transactions);
@@ -95,21 +123,57 @@ if (require.main === module) {
     }
   }
 
-  // Parse CSV file and filter by payment method
+  // Parse CSV file based on payment method
   function parseCSV(filePath, paymentMethod) {
     return new Promise((resolve, reject) => {
+      // Determine which bank this payment method belongs to
+      let bank = null;
+      if (paymentMethod.toLowerCase().startsWith('chase')) {
+        bank = 'chase';
+      } else if (paymentMethod.toLowerCase().startsWith('amex')) {
+        bank = 'amex';
+      } else if (paymentMethod.toLowerCase().startsWith('apple')) {
+        bank = 'apple';
+      } else {
+        return reject(new Error(`Unsupported payment method: ${paymentMethod}. Cannot determine bank type.`));
+      }
+      
+      // Get the field mappings for this bank
+      const fieldMappings = BANK_MAPPINGS[bank];
+      
+      console.log(`Using ${bank} field mappings for payment method: ${paymentMethod}`);
+      
       const results = [];
       
       createReadStream(filePath)
         .pipe(csv())
         .on('data', (data) => {
-          // Assuming the CSV has a column for payment method
-          // Adjust the property name based on your actual CSV structure
-          const paymentMethodField = data['Payment Method'] || data['payment_method'] || data['paymentMethod'];
+          // Normalize the transaction data using the bank-specific field mappings
+          const normalizedTransaction = {};
           
-          if (paymentMethodField && paymentMethodField.toLowerCase() === paymentMethod.toLowerCase()) {
-            results.push(data);
+          // Map the bank-specific fields to standardized fields
+          normalizedTransaction.description = data[fieldMappings.description] || 'Unknown';
+          normalizedTransaction.amount = data[fieldMappings.amount] || '0';
+          normalizedTransaction.date = data[fieldMappings.transactionDate] || new Date().toISOString().split('T')[0];
+          
+          // Add any other fields that might be useful
+          if (fieldMappings.category) {
+            normalizedTransaction.category = data[fieldMappings.category];
           }
+          
+          if (fieldMappings.memo) {
+            normalizedTransaction.memo = data[fieldMappings.memo];
+          }
+          
+          if (fieldMappings.type) {
+            normalizedTransaction.type = data[fieldMappings.type];
+          }
+          
+          // Add the original data and payment method
+          normalizedTransaction.originalData = data;
+          normalizedTransaction.paymentMethod = paymentMethod;
+          
+          results.push(normalizedTransaction);
         })
         .on('end', () => {
           resolve(results);
@@ -126,8 +190,7 @@ if (require.main === module) {
     
     for (const transaction of transactions) {
       try {
-        // Adjust the property mappings based on your Notion database structure
-        // and your CSV column names
+        // Use the normalized transaction data
         await notionClient.pages.create({
           parent: {
             database_id: databaseId,
@@ -138,29 +201,56 @@ if (require.main === module) {
               title: [
                 {
                   text: {
-                    content: transaction['Description'] || transaction['description'] || 'Unknown Transaction'
+                    content: transaction.description || 'Unknown Transaction'
                   }
                 }
               ]
             },
             'Amount': {
-              number: parseFloat(transaction['Amount'] || transaction['amount'] || 0)
+              number: parseFloat(transaction.amount || 0)
             },
             'Date': {
               date: {
-                start: transaction['Date'] || transaction['date'] || new Date().toISOString().split('T')[0]
+                start: transaction.date || new Date().toISOString().split('T')[0]
               }
             },
             'Payment Method': {
               select: {
-                name: transaction['Payment Method'] || transaction['payment_method'] || transaction['paymentMethod']
+                name: transaction.paymentMethod
               }
             },
-            // Add more properties as needed
+            // Add category if available
+            ...(transaction.category && {
+              'Category': {
+                select: {
+                  name: transaction.category
+                }
+              }
+            }),
+            // Add memo if available
+            ...(transaction.memo && {
+              'Memo': {
+                rich_text: [
+                  {
+                    text: {
+                      content: transaction.memo
+                    }
+                  }
+                ]
+              }
+            }),
+            // Add type if available
+            ...(transaction.type && {
+              'Type': {
+                select: {
+                  name: transaction.type
+                }
+              }
+            })
           }
         });
         
-        console.log(`Uploaded transaction: ${transaction['Description'] || transaction['description'] || 'Unknown'}`);
+        console.log(`Uploaded transaction: ${transaction.description || 'Unknown'}`);
       } catch (error) {
         console.error(`Failed to upload transaction: ${error.message}`);
         // Continue with the next transaction
@@ -175,5 +265,6 @@ if (require.main === module) {
 // Export constants for testing
 module.exports = {
   ALLOWED_PAYMENT_METHODS,
-  ALLOWED_USERS
+  ALLOWED_USERS,
+  BANK_MAPPINGS
 };

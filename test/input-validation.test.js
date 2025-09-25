@@ -181,8 +181,9 @@ describe('Input Validation Tests', () => {
       // Test that all the valid payment methods are in the allowed list
       expect(ALLOWED_PAYMENT_METHODS).toContain('Chase Sapphire');
       expect(ALLOWED_PAYMENT_METHODS).toContain('Chase Freedom');
-      expect(ALLOWED_PAYMENT_METHODS).toContain('Amex');
+      expect(ALLOWED_PAYMENT_METHODS).toContain('Amex Platinum');
       expect(ALLOWED_PAYMENT_METHODS).toContain('Chase Southwest');
+      expect(ALLOWED_PAYMENT_METHODS).toContain('Apple Card');
     });
   });
 
