@@ -66,13 +66,11 @@ const parseCSV = (filePath, paymentMethod) => {
         {
           [fieldMappings.transactionDate]: '2023-01-15',
           [fieldMappings.description]: 'AMAZON.COM',
-          [fieldMappings.category]: 'Shopping',
           [fieldMappings.amount]: '-50.99'
         },
         {
           [fieldMappings.transactionDate]: '2023-01-16',
           [fieldMappings.description]: 'STARBUCKS',
-          [fieldMappings.category]: 'Food & Drink',
           [fieldMappings.amount]: '-4.95'
         }
       ];
@@ -94,13 +92,11 @@ const parseCSV = (filePath, paymentMethod) => {
         {
           [fieldMappings.transactionDate]: '2023-01-15',
           [fieldMappings.description]: 'NETFLIX',
-          [fieldMappings.category]: 'Entertainment',
           [fieldMappings.amount]: '15.99'
         },
         {
           [fieldMappings.transactionDate]: '2023-01-16',
           [fieldMappings.description]: 'SPOTIFY',
-          [fieldMappings.category]: 'Entertainment',
           [fieldMappings.amount]: '9.99'
         }
       ];
@@ -114,11 +110,6 @@ const parseCSV = (filePath, paymentMethod) => {
       normalizedTransaction.description = data[fieldMappings.description] || 'Unknown';
       normalizedTransaction.amount = data[fieldMappings.amount] || '0';
       normalizedTransaction.date = data[fieldMappings.transactionDate] || new Date().toISOString().split('T')[0];
-      
-      // Add any other fields that might be useful
-      if (fieldMappings.category && data[fieldMappings.category]) {
-        normalizedTransaction.category = data[fieldMappings.category];
-      }
       
       // Add the original data and payment method
       normalizedTransaction.originalData = data;
@@ -144,14 +135,12 @@ describe('Bank-specific CSV Parsing', () => {
       expect(transactions[0].description).toBe('AMAZON.COM');
       expect(transactions[0].amount).toBe('-50.99');
       expect(transactions[0].date).toBe('2023-01-15');
-      expect(transactions[0].category).toBe('Shopping');
       expect(transactions[0].paymentMethod).toBe('Chase Sapphire');
       
       // Check second transaction
       expect(transactions[1].description).toBe('STARBUCKS');
       expect(transactions[1].amount).toBe('-4.95');
       expect(transactions[1].date).toBe('2023-01-16');
-      expect(transactions[1].category).toBe('Food & Drink');
       expect(transactions[1].paymentMethod).toBe('Chase Sapphire');
     });
     
@@ -202,14 +191,12 @@ describe('Bank-specific CSV Parsing', () => {
       expect(transactions[0].description).toBe('NETFLIX');
       expect(transactions[0].amount).toBe('15.99');
       expect(transactions[0].date).toBe('2023-01-15');
-      expect(transactions[0].category).toBe('Entertainment');
       expect(transactions[0].paymentMethod).toBe('Apple Card');
       
       // Check second transaction
       expect(transactions[1].description).toBe('SPOTIFY');
       expect(transactions[1].amount).toBe('9.99');
       expect(transactions[1].date).toBe('2023-01-16');
-      expect(transactions[1].category).toBe('Entertainment');
       expect(transactions[1].paymentMethod).toBe('Apple Card');
     });
   });

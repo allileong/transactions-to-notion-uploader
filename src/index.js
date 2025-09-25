@@ -20,7 +20,6 @@ const BANK_MAPPINGS = {
   chase: {
     transactionDate: 'Transaction Date',
     description: 'Description',
-    category: 'Category',
     amount: 'Amount'
   },
   amex: {
@@ -35,7 +34,6 @@ const BANK_MAPPINGS = {
     transactionDate: 'Transaction Date',
     description: 'Merchant',
     amount: 'Amount (USD)',
-    category: 'Category',
     // Add other Apple Card fields as needed
   }
 };
@@ -177,11 +175,7 @@ function parseCSV(filePath, paymentMethod) {
         normalizedTransaction.amount = data[fieldMappings.amount] || '0';
         normalizedTransaction.date = data[fieldMappings.transactionDate] || new Date().toISOString().split('T')[0];
         
-        // Add any other fields that might be useful
-        if (fieldMappings.category) {
-          normalizedTransaction.category = data[fieldMappings.category];
-        }
-        
+        // Add the original data and payment method
         // Add the original data and payment method
         normalizedTransaction.originalData = data;
         normalizedTransaction.paymentMethod = paymentMethod;
@@ -244,14 +238,6 @@ async function uploadToNotion(notionClient, databaseId, transactions, whoAmI) {
               name: `${whoAmIPrefix}${transaction.paymentMethod || 'Unknown Card'}`,
             },
           },
-          // Add category if available
-          ...(transaction.category && {
-            'Category': {
-              select: {
-                name: transaction.category
-              }
-            }
-          })
         }
       });
       

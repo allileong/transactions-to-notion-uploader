@@ -68,19 +68,16 @@ describe('End-to-End Tests', () => {
         {
           'Transaction Date': '2023-01-15',
           'Description': 'AMAZON.COM',
-          'Category': 'Shopping',
           'Amount': '-50.99'
         },
         {
           'Transaction Date': '2023-01-16',
           'Description': 'STARBUCKS',
-          'Category': 'Food & Drink',
           'Amount': '-4.95'
         },
         {
           'Transaction Date': '2023-01-17',
           'Description': 'NETFLIX',
-          'Category': 'Entertainment',
           'Amount': '-15.99'
         }
       ];
@@ -152,7 +149,6 @@ describe('End-to-End Tests', () => {
       expect(firstCall).toHaveProperty('properties.Total Amount.number', 50.99);
       expect(firstCall).toHaveProperty('properties.Status.select.name', 'Processing Audit');
       expect(firstCall).toHaveProperty('properties.Payment Method.select.name', 'Alli\'s Chase Freedom');
-      expect(firstCall).toHaveProperty('properties.Category.select.name', 'Shopping');
       
       // Check the second transaction
       const secondCall = mockNotionCreate.mock.calls[1][0];
@@ -162,7 +158,6 @@ describe('End-to-End Tests', () => {
       expect(secondCall).toHaveProperty('properties.Total Amount.number', 4.95);
       expect(secondCall).toHaveProperty('properties.Status.select.name', 'Processing Audit');
       expect(secondCall).toHaveProperty('properties.Payment Method.select.name', 'Alli\'s Chase Freedom');
-      expect(secondCall).toHaveProperty('properties.Category.select.name', 'Food & Drink');
       
       // Check the third transaction
       const thirdCall = mockNotionCreate.mock.calls[2][0];
@@ -172,7 +167,6 @@ describe('End-to-End Tests', () => {
       expect(thirdCall).toHaveProperty('properties.Total Amount.number', 15.99);
       expect(thirdCall).toHaveProperty('properties.Status.select.name', 'Processing Audit');
       expect(thirdCall).toHaveProperty('properties.Payment Method.select.name', 'Alli\'s Chase Freedom');
-      expect(thirdCall).toHaveProperty('properties.Category.select.name', 'Entertainment');
     });
   });
 });
