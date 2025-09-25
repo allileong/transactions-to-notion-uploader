@@ -226,10 +226,10 @@ async function uploadToNotion(notionClient, databaseId, transactions, whoAmI) {
           'Total Amount': {
             number: Math.abs(parseFloat(transaction.amount || 0)), // Ensure positive value
           },
-          // Status field set to "Processing Expense" for all imported records
+          // Status field set to "Requires Audit" for all imported records
           'Status': {
             select: {
-              name: 'Processing Audit',
+              name: 'Requires Audit',
             },
           },
           // Payment Method field - concatenate whoAmI with payment method
