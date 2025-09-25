@@ -19,12 +19,9 @@ const ALLOWED_USERS = ['Alli', 'Justin'];
 const BANK_MAPPINGS = {
   chase: {
     transactionDate: 'Transaction Date',
-    postDate: 'Post Date',
     description: 'Description',
     category: 'Category',
-    type: 'Type',
-    amount: 'Amount',
-    memo: 'Memo'
+    amount: 'Amount'
   },
   amex: {
     // Amex-specific field mappings
@@ -161,14 +158,6 @@ if (require.main === module) {
             normalizedTransaction.category = data[fieldMappings.category];
           }
           
-          if (fieldMappings.memo) {
-            normalizedTransaction.memo = data[fieldMappings.memo];
-          }
-          
-          if (fieldMappings.type) {
-            normalizedTransaction.type = data[fieldMappings.type];
-          }
-          
           // Add the original data and payment method
           normalizedTransaction.originalData = data;
           normalizedTransaction.paymentMethod = paymentMethod;
@@ -227,26 +216,7 @@ if (require.main === module) {
                 }
               }
             }),
-            // Add memo if available
-            ...(transaction.memo && {
-              'Memo': {
-                rich_text: [
-                  {
-                    text: {
-                      content: transaction.memo
-                    }
-                  }
-                ]
-              }
-            }),
-            // Add type if available
-            ...(transaction.type && {
-              'Type': {
-                select: {
-                  name: transaction.type
-                }
-              }
-            })
+            // End of properties
           }
         });
         
