@@ -1,0 +1,19 @@
+{
+  "name": "transactions-to-notion-uploader",
+  "version": "1.0.0",
+  "description": "CLI tool to upload transactions from CSV to Notion",
+  "main": "src/index.js",
+  "bin": {
+    "transactions-to-notion": "./src/index.js"
+  },
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "packageManager": "yarn@4.9.4",
+  "dependencies": {
+    "@notionhq/client": "^2.2.14",
+    "commander": "^12.0.0",
+    "csv-parser": "^3.0.0",
+    "dotenv": "^17.2.2"
+  }
+}
