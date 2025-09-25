@@ -75,19 +75,29 @@ if (require.main === module) {
       const notionApiKey = options.notionApiKey || process.env.NOTION_API_KEY;
       const notionDatabaseId = options.notionDatabaseId || process.env.NOTION_DATABASE_ID;
       
-      // Validate who-am-i option if provided
-      if (options.whoAmI && !ALLOWED_USERS.includes(options.whoAmI)) {
-        console.error(`Error: --who-am-i must be one of: ${ALLOWED_USERS.join(', ')}`);
-        process.exit(1);
-      }
-
+      // Get whoAmI value
+      const whoAmI = options.whoAmI || process.env.WHO_AM_I;
+      
+      // Validate Notion API key
       if (!notionApiKey) {
         console.error('Error: Notion API key is required. Provide it via --notion-api-key option or NOTION_API_KEY env var.');
         process.exit(1);
       }
 
+      // Validate Notion database ID
       if (!notionDatabaseId) {
         console.error('Error: Notion database ID is required. Provide it via --notion-database-id option or NOTION_DATABASE_ID env var.');
+        process.exit(1);
+      }
+      
+      // Validate whoAmI
+      if (!whoAmI) {
+        console.error('Error: WHO_AM_I is required. Provide it via --who-am-i option or WHO_AM_I env var.');
+        process.exit(1);
+      }
+      
+      if (!ALLOWED_USERS.includes(whoAmI)) {
+        console.error(`Error: --who-am-i must be one of: ${ALLOWED_USERS.join(', ')}`);
         process.exit(1);
       }
 
@@ -114,7 +124,7 @@ if (require.main === module) {
         console.log('------------------------------------------------');
         console.log(`📊 Total: ${transactions.length} transactions`);
       } else {
-        await uploadToNotion(notion, notionDatabaseId, transactions);
+        await uploadToNotion(notion, notionDatabaseId, transactions, whoAmI);
         console.log(`\n🎉 Successfully uploaded ${transactions.length} transactions to Notion! 🎉`);
       }
     } catch (error) {
@@ -177,8 +187,11 @@ if (require.main === module) {
   }
 
   // Upload transactions to Notion database
-  async function uploadToNotion(notionClient, databaseId, transactions) {
+  async function uploadToNotion(notionClient, databaseId, transactions, whoAmI) {
     console.log('Uploading transactions to Notion...');
+    
+    // Format the whoAmI prefix
+    const whoAmIPrefix = `${whoAmI}'s `;
     
     for (const transaction of transactions) {
       try {
@@ -214,10 +227,10 @@ if (require.main === module) {
                 name: 'Processing Audit',
               },
             },
-            // Payment Method field - derived from card name
+            // Payment Method field - concatenate whoAmI with payment method
             'Payment Method': {
               select: {
-                name: transaction.paymentMethod || 'Unknown Card',
+                name: `${whoAmIPrefix}${transaction.paymentMethod || 'Unknown Card'}`,
               },
             },
             // Add category if available
@@ -232,7 +245,7 @@ if (require.main === module) {
         });
         
         // Print transaction details in a visually pleasing way with emojis
-        console.log(`✅ Uploaded: 💰 ${Math.abs(parseFloat(transaction.amount || 0)).toFixed(2)} | 📝 ${transaction.description || 'Unknown'} | 📅 ${transaction.date || 'No date'} | 💳 ${transaction.paymentMethod}`);
+        console.log(`✅ Uploaded: 💰 ${Math.abs(parseFloat(transaction.amount || 0)).toFixed(2)} | 📝 ${transaction.description || 'Unknown'} | 📅 ${transaction.date || 'No date'} | 💳 ${whoAmIPrefix}${transaction.paymentMethod}`);
       } catch (error) {
         console.error(`Failed to upload transaction: ${error.message}`);
         // Continue with the next transaction
