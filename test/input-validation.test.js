@@ -1,5 +1,6 @@
 const path = require('path');
 const { execSync } = require('child_process');
+const { ALLOWED_PAYMENT_METHODS, ALLOWED_USERS } = require('../src/index');
 
 // Mock modules
 jest.mock('fs', () => {
@@ -173,16 +174,15 @@ describe('Input Validation Tests', () => {
     test('should error when --payment-method is invalid', () => {
       // For this test, we'll just verify that the payment method validation is working
       // by checking that the allowed payment methods are correct
-      const allowedPaymentMethods = ['Chase Sapphire', 'Chase Freedom', 'Amex', 'Chase Southwest'];
       
       // Test that an invalid payment method is not in the allowed list
-      expect(allowedPaymentMethods).not.toContain('Invalid Payment Method');
+      expect(ALLOWED_PAYMENT_METHODS).not.toContain('Invalid Payment Method');
       
       // Test that all the valid payment methods are in the allowed list
-      expect(allowedPaymentMethods).toContain('Chase Sapphire');
-      expect(allowedPaymentMethods).toContain('Chase Freedom');
-      expect(allowedPaymentMethods).toContain('Amex');
-      expect(allowedPaymentMethods).toContain('Chase Southwest');
+      expect(ALLOWED_PAYMENT_METHODS).toContain('Chase Sapphire');
+      expect(ALLOWED_PAYMENT_METHODS).toContain('Chase Freedom');
+      expect(ALLOWED_PAYMENT_METHODS).toContain('Amex');
+      expect(ALLOWED_PAYMENT_METHODS).toContain('Chase Southwest');
     });
   });
 
@@ -195,9 +195,7 @@ describe('Input Validation Tests', () => {
       // Mock fs.access to succeed
       fs.promises.access.mockResolvedValue(undefined);
       
-      const validUsers = ['Alli', 'Justin'];
-      
-      for (const user of validUsers) {
+      for (const user of ALLOWED_USERS) {
         const result = runCli([
           '--csv-file-path', 'sample-transactions.csv',
           '--payment-method', 'Chase Sapphire',
@@ -205,7 +203,7 @@ describe('Input Validation Tests', () => {
           '--dry-run'
         ]);
         
-        expect(result.stderr).not.toContain('Error: --who-am-i must be either "Alli" or "Justin"');
+        expect(result.stderr).not.toContain(`Error: --who-am-i must be one of: ${ALLOWED_USERS.join(', ')}`);
       }
     });
 
@@ -224,7 +222,7 @@ describe('Input Validation Tests', () => {
         '--dry-run'
       ]);
       
-      expect(result.stderr).toContain('Error: --who-am-i must be either "Alli" or "Justin"');
+      expect(result.stderr).toContain(`Error: --who-am-i must be one of: ${ALLOWED_USERS.join(', ')}`);
     });
 
     test('should accept WHO_AM_I from environment variable', () => {
