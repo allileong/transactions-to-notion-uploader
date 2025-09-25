@@ -15,11 +15,6 @@ dotenv.config();
 const ALLOWED_PAYMENT_METHODS = ['Chase Sapphire', 'Chase Freedom', 'Amex', 'Chase Southwest'];
 const ALLOWED_USERS = ['Alli', 'Justin'];
 
-// Export constants for testing
-module.exports = {
-  ALLOWED_PAYMENT_METHODS,
-  ALLOWED_USERS
-};
 
 // Only run the main code if this file is being run directly
 if (require.main === module) {
@@ -176,3 +171,9 @@ if (require.main === module) {
   // Run the main function
   main();
 }
+
+// Export constants for testing
+module.exports = {
+  ALLOWED_PAYMENT_METHODS,
+  ALLOWED_USERS
+};
