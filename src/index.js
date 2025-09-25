@@ -12,7 +12,7 @@ const { Client } = require('@notionhq/client');
 dotenv.config();
 
 // Constants
-const ALLOWED_PAYMENT_METHODS = ['Chase Sapphire', 'Chase Freedom', 'Amex', 'Chase Southwest'];
+const ALLOWED_PAYMENT_METHODS = ['Amex Platinum', 'Apple Card', 'Chase Freedom', 'Chase Sapphire', 'Chase Southwest'];
 const ALLOWED_USERS = ['Alli', 'Justin'];
 
 
