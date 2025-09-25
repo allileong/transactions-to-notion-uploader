@@ -21,6 +21,7 @@ program
   .requiredOption('--payment-method <method>', 'Payment method to filter transactions')
   .option('--notion-database-id <id>', 'Notion database ID (can also be set via NOTION_DATABASE_ID env var)')
   .option('--notion-api-key <key>', 'Notion API key (can also be set via NOTION_API_KEY env var)')
+  .option('--who-am-i <name>', 'Specify user identity (either "Alli" or "Justin")')
   .option('--dry-run', 'Show transactions that would be uploaded without actually uploading them')
   .parse(process.argv);
 
@@ -41,6 +42,12 @@ async function main() {
     // Get Notion API key and database ID
     const notionApiKey = options.notionApiKey || process.env.NOTION_API_KEY;
     const notionDatabaseId = options.notionDatabaseId || process.env.NOTION_DATABASE_ID;
+    
+    // Validate who-am-i option if provided
+    if (options.whoAmI && !['Alli', 'Justin'].includes(options.whoAmI)) {
+      console.error('Error: --who-am-i must be either "Alli" or "Justin"');
+      process.exit(1);
+    }
 
     if (!notionApiKey) {
       console.error('Error: Notion API key is required. Provide it via --notion-api-key option or NOTION_API_KEY env var.');
