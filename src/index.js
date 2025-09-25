@@ -101,6 +101,11 @@ if (require.main === module) {
         process.exit(1);
       }
 
+      if (!ALLOWED_PAYMENT_METHODS.includes(options.paymentMethod)) {
+        console.error(`Error: --payment-method must be one of: ${ALLOWED_PAYMENT_METHODS.join(', ')}`);
+        process.exit(1);
+      }
+
       // Initialize Notion client
       const notion = new Client({ auth: notionApiKey });
 
