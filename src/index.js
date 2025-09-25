@@ -212,10 +212,10 @@ async function uploadToNotion(notionClient, databaseId, transactions, whoAmI) {
           database_id: databaseId,
         },
         properties: {
-          // Transaction Date -> Date
+          // Transaction Date -> Date (ensure ISO format)
           'Date': {
             date: {
-              start: transaction.date || new Date().toISOString().split('T')[0],
+              start: formatDateToISO(transaction.date) || new Date().toISOString().split('T')[0],
             },
           },
           // Description -> Expense
@@ -264,11 +264,28 @@ async function uploadToNotion(notionClient, databaseId, transactions, whoAmI) {
   }
 }
 
+// Format date string to ISO format (YYYY-MM-DD)
+function formatDateToISO(dateString) {
+  if (!dateString) return null;
+    
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+      throw new Error(`Invalid date: ${dateString}`);
+    }
+    return date.toISOString().split('T')[0]; // Return YYYY-MM-DD format
+  } catch (error) {
+    console.warn(`Date parsing error for "${dateString}":`, error.message);
+    return null;
+  }
+}
+
 // Export constants and functions for testing
 module.exports = {
   ALLOWED_PAYMENT_METHODS,
   ALLOWED_USERS,
   BANK_MAPPINGS,
   parseCSV,
-  uploadToNotion
+  uploadToNotion,
+  formatDateToISO
 };
