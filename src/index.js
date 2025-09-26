@@ -38,108 +38,88 @@ const BANK_MAPPINGS = {
   }
 };
 
-
-// Only run the main code if this file is being run directly
-if (require.main === module) {
-  const program = new Command();
-
-  program
-    .name('transactions-to-notion')
-    .description('Upload transactions from a CSV file to Notion')
-    .version('1.0.0')
-    .requiredOption('--csv-file-path <path>', 'Path to the CSV file containing transactions')
-    .requiredOption('--payment-method <method>', `Payment method to filter transactions (one of: ${ALLOWED_PAYMENT_METHODS.join(', ')})`)
-    .option('--notion-database-id <id>', 'Notion database ID (can also be set via NOTION_DATABASE_ID env var)')
-    .option('--notion-api-key <key>', 'Notion API key (can also be set via NOTION_API_KEY env var)')
-    .option('--who-am-i <name>', `Specify user identity (one of: ${ALLOWED_USERS.join(', ')})`)
-    .option('--dry-run', 'Show transactions that would be uploaded without actually uploading them')
-    .parse(process.argv);
-
-  const options = program.opts();
-
-  // Main function
-  async function main() {
+// Main function
+async function main(options) {
+  console.log('just entered MAIN')
+  try {
+    // Validate CSV file path
+    const csvFilePath = options.csvFilePath;
     try {
-      // Validate CSV file path
-      const csvFilePath = options.csvFilePath;
-      try {
-        await fs.access(csvFilePath);
-      } catch (error) {
-        console.error(`Error: CSV file not found at path: ${csvFilePath}`);
-        process.exit(1);
-      }
-
-      // Get Notion API key and database ID
-      const notionApiKey = options.notionApiKey || process.env.NOTION_API_KEY;
-      const notionDatabaseId = options.notionDatabaseId || process.env.NOTION_DATABASE_ID;
-      
-      // Get whoAmI value
-      const whoAmI = options.whoAmI || process.env.WHO_AM_I;
-      
-      // Validate Notion API key
-      if (!notionApiKey) {
-        console.error('Error: Notion API key is required. Provide it via --notion-api-key option or NOTION_API_KEY env var.');
-        process.exit(1);
-      }
-
-      // Validate Notion database ID
-      if (!notionDatabaseId) {
-        console.error('Error: Notion database ID is required. Provide it via --notion-database-id option or NOTION_DATABASE_ID env var.');
-        process.exit(1);
-      }
-      
-      // Validate whoAmI
-      if (!whoAmI) {
-        console.error('Error: WHO_AM_I is required. Provide it via --who-am-i option or WHO_AM_I env var.');
-        process.exit(1);
-      }
-      
-      if (!ALLOWED_USERS.includes(whoAmI)) {
-        console.error(`Error: --who-am-i must be one of: ${ALLOWED_USERS.join(', ')}`);
-        process.exit(1);
-      }
-
-      if (!ALLOWED_PAYMENT_METHODS.includes(options.paymentMethod)) {
-        console.error(`Error: --payment-method must be one of: ${ALLOWED_PAYMENT_METHODS.join(', ')}`);
-        process.exit(1);
-      }
-
-      // Initialize Notion client
-      const notion = new Client({ auth: notionApiKey });
-
-      // Parse CSV and filter by payment method
-      const transactions = await parseCSV(csvFilePath, options.paymentMethod);
-      
-      if (transactions.length === 0) {
-        console.log(`No transactions found with payment method: ${options.paymentMethod}`);
-        process.exit(0);
-      }
-      
-      console.log(`Found ${transactions.length} transactions with payment method: ${options.paymentMethod}`);
-      
-      // Upload transactions to Notion (unless dry run)
-      if (options.dryRun) {
-        console.log('🔍 DRY RUN: The following transactions would be uploaded:');
-        console.log('------------------------------------------------');
-        transactions.forEach((transaction, index) => {
-          console.log(`${index + 1}. 📝 ${transaction.description || 'Unknown'} | 💰 $${Math.abs(parseFloat(transaction.amount || 0)).toFixed(2)} | 📅 ${transaction.date || 'No date'}`);
-        });
-        console.log('------------------------------------------------');
-        console.log(`📊 Total: ${transactions.length} transactions`);
-      } else {
-        await uploadToNotion(notion, notionDatabaseId, transactions, whoAmI);
-        console.log(`\n🎉 Successfully uploaded ${transactions.length} transactions to Notion! 🎉`);
-      }
+      await fs.access(csvFilePath);
     } catch (error) {
-      console.error('Error:', error.message);
+      console.error(`Error: CSV file not found at path: ${csvFilePath}`);
       process.exit(1);
     }
+
+    // Get Notion API key and database ID
+    const notionApiKey = options.notionApiKey || process.env.NOTION_API_KEY;
+    const notionDatabaseId = options.notionDatabaseId || process.env.NOTION_DATABASE_ID;
+
+    console.log('DEBUG START')
+    console.log( {notionApiKey, notionDatabaseId})
+    console.log('DEBUG END')
+    
+    // Get whoAmI value
+    const whoAmI = options.whoAmI || process.env.WHO_AM_I;
+    
+    // Validate Notion API key
+    if (!notionApiKey) {
+      console.error('Error: Notion API key is required. Provide it via --notion-api-key option or NOTION_API_KEY env var.');
+      process.exit(1);
+    }
+
+    // Validate Notion database ID
+    if (!notionDatabaseId) {
+      console.error('Error: Notion database ID is required. Provide it via --notion-database-id option or NOTION_DATABASE_ID env var.');
+      process.exit(1);
+    }
+    
+    // Validate whoAmI
+    if (!whoAmI) {
+      console.error('Error: WHO_AM_I is required. Provide it via --who-am-i option or WHO_AM_I env var.');
+      process.exit(1);
+    }
+    
+    if (!ALLOWED_USERS.includes(whoAmI)) {
+      console.error(`Error: --who-am-i must be one of: ${ALLOWED_USERS.join(', ')}`);
+      process.exit(1);
+    }
+
+    if (!ALLOWED_PAYMENT_METHODS.includes(options.paymentMethod)) {
+      console.error(`Error: --payment-method must be one of: ${ALLOWED_PAYMENT_METHODS.join(', ')}`);
+      process.exit(1);
+    }
+
+    // Initialize Notion client
+    const notion = new Client({ auth: notionApiKey });
+
+    // Parse CSV and filter by payment method
+    const transactions = await parseCSV(csvFilePath, options.paymentMethod);
+    
+    if (transactions.length === 0) {
+      console.log(`No transactions found with payment method: ${options.paymentMethod}`);
+      process.exit(0);
+    }
+    
+    console.log(`Found ${transactions.length} transactions with payment method: ${options.paymentMethod}`);
+    
+    // Upload transactions to Notion (unless dry run)
+    if (options.dryRun) {
+      console.log('🔍 DRY RUN: The following transactions would be uploaded:');
+      console.log('------------------------------------------------');
+      transactions.forEach((transaction, index) => {
+        console.log(`${index + 1}. 📝 ${transaction.description || 'Unknown'} | 💰 $${Math.abs(parseFloat(transaction.amount || 0)).toFixed(2)} | 📅 ${transaction.date || 'No date'}`);
+      });
+      console.log('------------------------------------------------');
+      console.log(`📊 Total: ${transactions.length} transactions`);
+    } else {
+      await uploadToNotion(notion, notionDatabaseId, transactions, whoAmI);
+      console.log(`\n🎉 Successfully uploaded ${transactions.length} transactions to Notion! 🎉`);
+    }
+  } catch (error) {
+    console.error('Error:', error.message);
+    process.exit(1);
   }
-
-  // Use the parseCSV and uploadToNotion functions defined outside the main function
-
-  // Run the main function
-  main();
 }
 
 // Parse CSV file based on payment method
@@ -265,6 +245,30 @@ function formatDateToISO(dateString) {
     return null;
   }
 }
+
+(async () => {
+  console.log('IN THE FILE')
+  const program = new Command();
+
+  program
+    .name('transactions-to-notion')
+    .description('Upload transactions from a CSV file to Notion')
+    .version('1.0.0')
+    .requiredOption('--csv-file-path <path>', 'Path to the CSV file containing transactions')
+    .requiredOption('--payment-method <method>', `Payment method to filter transactions (one of: ${ALLOWED_PAYMENT_METHODS.join(', ')})`)
+    .option('--notion-database-id <id>', 'Notion database ID (can also be set via NOTION_DATABASE_ID env var)')
+    .option('--notion-api-key <key>', 'Notion API key (can also be set via NOTION_API_KEY env var)')
+    .option('--who-am-i <name>', `Specify user identity (one of: ${ALLOWED_USERS.join(', ')})`)
+    .option('--dry-run', 'Show transactions that would be uploaded without actually uploading them')
+    .parse(process.argv);
+
+  const options = program.opts();
+
+  // Use the parseCSV and uploadToNotion functions defined outside the main function
+
+  // Run the main function
+  main(program.opts());
+})();
 
 // Export constants and functions for testing
 module.exports = {
