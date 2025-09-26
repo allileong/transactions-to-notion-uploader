@@ -1,4 +1,4 @@
-const { BANK_MAPPINGS } = require('../src/index');
+const { BANK_MAPPINGS } = require('../src/utils');
 const fs = require('fs');
 const path = require('path');
 
