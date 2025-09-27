@@ -1,4 +1,4 @@
-const fs = require('fs').promises;
+const fs = require('fs/promises');
 const { createReadStream } = require('fs');
 const csv = require('csv-parser');
 const { Client } = require('@notionhq/client');
