@@ -126,7 +126,11 @@ async function uploadToNotion(notionClient, databaseId, transactions, whoAmI) {
             select: {
               name: 'CSV Upload',
             },
-          }
+          },
+          'Created By': {
+            select: {
+              name: whoAmI,
+            },
         }
       });
       
@@ -157,7 +161,6 @@ function formatDateToISO(dateString) {
 
 // Main function to validate inputs and upload transactions to Notion
 async function validateAndUploadTransactions(options) {
-  console.log('just entered MAIN')
   try {
     // Validate CSV file path
     const csvFilePath = options.csvFilePath;
@@ -170,13 +173,10 @@ async function validateAndUploadTransactions(options) {
     // Get Notion API key and database ID
     const notionApiKey = options.notionApiKey || process.env.NOTION_API_KEY;
     const notionDatabaseId = options.notionDatabaseId || process.env.NOTION_DATABASE_ID;
-
-    console.log('DEBUG START')
-    console.log( {notionApiKey, notionDatabaseId})
-    console.log('DEBUG END')
-    
     // Get whoAmI value
     const whoAmI = options.whoAmI || process.env.WHO_AM_I;
+
+    console.log( {notionApiKey, notionDatabaseId, whoAmI});
     
     // Validate Notion API key
     if (!notionApiKey) {

@@ -16,13 +16,11 @@ const {
 dotenv.config();
 
 (async () => {
-  console.log('IN THE FILE')
   const program = new Command();
 
   program
     .name('transactions-to-notion')
     .description('Upload transactions from a CSV file to Notion')
-    .version('1.0.0')
     .requiredOption('--csv-file-path <path>', 'Path to the CSV file containing transactions')
     .requiredOption('--payment-method <method>', `Payment method to filter transactions (one of: ${ALLOWED_PAYMENT_METHODS.join(', ')})`)
     .option('--notion-database-id <id>', 'Notion database ID (can also be set via NOTION_DATABASE_ID env var)')
