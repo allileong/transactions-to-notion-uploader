@@ -62,7 +62,7 @@ async function parseCSV(filePath, paymentMethod, whoAmI) {
         const date = data[fieldMappings.transactionDate] || new Date().toISOString().split('T')[0];
         
         // Create an Expense object with the parsed data
-        const expense = new Transaction(description, amount, date, whoAmI, paymentMethod);
+        const expense = new Transaction(description, amount, date, paymentMethod);
         
         results.push(expense);
       })
@@ -125,11 +125,6 @@ async function uploadToNotion(notionClient, databaseId, transactions, whoAmI) {
           'Created From': {
             select: {
               name: 'CSV Upload',
-            },
-          },
-          'Created By': {
-            select: {
-              name: whoAmI,
             },
           }
         }

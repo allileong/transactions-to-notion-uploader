@@ -1,9 +1,8 @@
 class Transaction {
-    constructor(description, amount, date, createdBy, paymentMethod) {
+    constructor(description, amount, date, paymentMethod) {
         this.description = description;
         this.amount = amount;
         this.date = date;
-        this.createdBy = createdBy;
         this.paymentMethod = paymentMethod;
         
     }   
