@@ -131,6 +131,7 @@ async function uploadToNotion(notionClient, databaseId, transactions, whoAmI) {
             select: {
               name: whoAmI,
             },
+          }
         }
       });
       
