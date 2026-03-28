@@ -2,6 +2,7 @@ const fs = require('fs/promises');
 const { createReadStream } = require('fs');
 const csv = require('csv-parser');
 const { Client } = require('@notionhq/client');
+const Transaction = require('./transaction');
 
 // Constants
 const ALLOWED_PAYMENT_METHODS = ['Amex Platinum', 'Apple Card', 'Chase Freedom', 'Chase Sapphire', 'Chase Southwest'];
@@ -31,43 +32,39 @@ const BANK_MAPPINGS = {
 };
 
 // Parse CSV file based on payment method
-function parseCSV(filePath, paymentMethod) {
+async function parseCSV(filePath, paymentMethod, whoAmI) {
+  // Determine which bank this payment method belongs to
+  let bank = null;
+  if (paymentMethod.toLowerCase().startsWith('chase')) {
+    bank = 'chase';
+  } else if (paymentMethod.toLowerCase().startsWith('amex')) {
+    bank = 'amex';
+  } else if (paymentMethod.toLowerCase().startsWith('apple')) {
+    bank = 'apple';
+  } else {
+    throw new Error(`Unsupported payment method: ${paymentMethod}. Cannot determine bank type.`);
+  }
+  
+  // Get the field mappings for this bank
+  const fieldMappings = BANK_MAPPINGS[bank];
+  
+  console.log(`Using ${bank} field mappings for payment method: ${paymentMethod}`);
+  
   return new Promise((resolve, reject) => {
-    // Determine which bank this payment method belongs to
-    let bank = null;
-    if (paymentMethod.toLowerCase().startsWith('chase')) {
-      bank = 'chase';
-    } else if (paymentMethod.toLowerCase().startsWith('amex')) {
-      bank = 'amex';
-    } else if (paymentMethod.toLowerCase().startsWith('apple')) {
-      bank = 'apple';
-    } else {
-      return reject(new Error(`Unsupported payment method: ${paymentMethod}. Cannot determine bank type.`));
-    }
-    
-    // Get the field mappings for this bank
-    const fieldMappings = BANK_MAPPINGS[bank];
-    
-    console.log(`Using ${bank} field mappings for payment method: ${paymentMethod}`);
-    
     const results = [];
     
     createReadStream(filePath)
       .pipe(csv())
       .on('data', (data) => {
-        // Normalize the transaction data using the bank-specific field mappings
-        const normalizedTransaction = {};
+        // Extract fields using bank-specific field mappings
+        const description = data[fieldMappings.description] || 'Unknown';
+        const amount = data[fieldMappings.amount] || '0';
+        const date = data[fieldMappings.transactionDate] || new Date().toISOString().split('T')[0];
         
-        // Map the bank-specific fields to standardized fields
-        normalizedTransaction.description = data[fieldMappings.description] || 'Unknown';
-        normalizedTransaction.amount = data[fieldMappings.amount] || '0';
-        normalizedTransaction.date = data[fieldMappings.transactionDate] || new Date().toISOString().split('T')[0];
+        // Create an Expense object with the parsed data
+        const expense = new Transaction(description, amount, date, whoAmI, paymentMethod);
         
-        // Add the original data and payment method
-        normalizedTransaction.originalData = data;
-        normalizedTransaction.paymentMethod = paymentMethod;
-        
-        results.push(normalizedTransaction);
+        results.push(expense);
       })
       .on('end', () => {
         resolve(results);
@@ -116,7 +113,7 @@ async function uploadToNotion(notionClient, databaseId, transactions, whoAmI) {
           // Status field set to "Requires Audit" for all imported records
           'Status': {
             select: {
-              name: 'Requires Audit',
+              name: 'Uploaded',
             },
           },
           // Payment Method field - concatenate whoAmI with payment method
@@ -125,6 +122,11 @@ async function uploadToNotion(notionClient, databaseId, transactions, whoAmI) {
               name: `${whoAmIPrefix}${transaction.paymentMethod || 'Unknown Card'}`,
             },
           },
+          'Created From': {
+            select: {
+              name: 'CSV Upload',
+            },
+          }
         }
       });
       
@@ -203,7 +205,7 @@ async function validateAndUploadTransactions(options) {
     const notion = new Client({ auth: notionApiKey });
 
     // Parse CSV and filter by payment method
-    const transactions = await parseCSV(csvFilePath, options.paymentMethod);
+    const transactions = await parseCSV(csvFilePath, options.paymentMethod, whoAmI);
     
     if (transactions.length === 0) {
       console.log(`No transactions found with payment method: ${options.paymentMethod}`);
